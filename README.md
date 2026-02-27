@@ -1,10 +1,11 @@
-# PNG Optimizer
+# Image Optimizer
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Free](https://img.shields.io/badge/free-yes-brightgreen.svg)
+![Formats](https://img.shields.io/badge/formats-PNG%20%7C%20JPEG%20%7C%20WebP%20%7C%20GIF%20%7C%20BMP%20%7C%20TIFF-orange.svg)
 
-A powerful WordPress plugin for lossless PNG image optimization, bulk processing, and WebP conversion. Automatically optimize images on upload with support for Imagick and GD libraries.
+A powerful WordPress plugin for automatic image optimization. Supports **PNG, JPEG, WebP, GIF, BMP and TIFF** formats with lossless/lossy compression, bulk processing, progressive JPEG and WebP conversion. Works with both Imagick and GD libraries.
 
 **Author:** CEMAL HEKIMOGLU
 
@@ -24,28 +25,48 @@ A powerful WordPress plugin for lossless PNG image optimization, bulk processing
 
 ## English
 
+### Supported Formats
+
+| Format | Compression | Special Features |
+|--------|-------------|-----------------|
+| **PNG** | Lossless (level 0–9) | Metadata stripping, alpha transparency preserved |
+| **JPEG** | Lossy (quality 10–95) | Progressive JPEG, metadata stripping, sRGB colorspace |
+| **WebP** | Lossy (quality 1–100) | Imagick + GD support |
+| **GIF** | Lossless | Animation layer optimization |
+| **BMP** | Lossless | Metadata stripping |
+| **TIFF** | Lossy (quality 10–95) | JPEG compression inside TIFF |
+
 ### Features
 
-✨ **Automatic Optimization** - PNG files are automatically optimized when uploaded
-⚙️ **Compression Levels** - Adjust compression from 0 (fastest) to 9 (smallest file)
-🌐 **WebP Conversion** - Generate .webp versions alongside PNG files
-💾 **Backup Originals** - Optional backup of original files before optimization
-🚀 **Bulk Processing** - Optimize your entire media library
-📊 **Statistics Dashboard** - Track savings and optimization progress
-🎯 **Zero Dependencies** - Works with standard WordPress libraries (GD/Imagick)
+✨ **Auto-Optimize on Upload** - All supported images are compressed immediately on upload
+🗜️ **PNG Lossless Compression** - Level 0–9, zero visual quality loss
+📷 **JPEG Quality Control** - Adjustable quality from 10 to 95
+⚡ **Progressive JPEG** - Images load top-to-bottom progressively in browsers
+🌐 **WebP Conversion** - Generate .webp files alongside originals
+🎞️ **GIF Optimization** - Optimize animated GIF layers
+💾 **Backup Originals** - Keep .optimizer-backup copy before processing
+🚀 **Bulk Processing** - Optimize entire media library at once
+📊 **Statistics Dashboard** - Track total savings and reduction percentage
+🎯 **No External Dependencies** - Works with standard PHP extensions (GD/Imagick)
+🔌 **Ayarlar Link** - Quick settings access from the Plugins list
 
 ### Installation
 
 1. Download the plugin folder and place it in `wp-content/plugins/`
 2. Activate from WordPress Plugins panel
-3. Go to Media → PNG Optimizer to configure
+3. Go to **Media → Image Optimizer** to configure
 
-### Usage
+### Settings
 
-**Auto-optimize on upload:** Enable in settings for automatic compression
-**Bulk optimize:** Process all PNG files in your media library at once
-**Test & preview:** Check compression before applying to your library
-**WebP conversion:** Generate modern WebP versions for faster loading
+| Setting | Description |
+|---------|-------------|
+| Auto-Optimize on Upload | Compress images automatically when uploaded |
+| PNG Compression Level | 0 (fastest) to 9 (smallest file), lossless |
+| JPEG Quality | 10–95, recommended 75–85 |
+| Progressive JPEG | Enables progressive scan for faster perceived loading |
+| Convert to WebP | Generate .webp alongside each image |
+| WebP Quality | 1–100, recommended 80 |
+| Backup Originals | Save .optimizer-backup before overwriting |
 
 ### Requirements
 
@@ -55,38 +76,54 @@ A powerful WordPress plugin for lossless PNG image optimization, bulk processing
 
 ### License
 
-MIT License - Free to use and modify. See LICENSE file for details.
-
-### Support
-
-For issues, suggestions, or contributions, visit the GitHub repository.
+MIT License — Free to use, modify and distribute. See LICENSE file.
 
 ---
 
 ## Türkçe
 
+### Desteklenen Formatlar
+
+| Format | Sıkıştırma | Özel Özellikler |
+|--------|-----------|----------------|
+| **PNG** | Lossless (seviye 0–9) | Metadata çıkarma, alfa saydamlığı korunur |
+| **JPEG** | Lossy (kalite 10–95) | Progressive JPEG, metadata çıkarma, sRGB renk uzayı |
+| **WebP** | Lossy (kalite 1–100) | Imagick + GD desteği |
+| **GIF** | Lossless | Animasyon katmanı optimizasyonu |
+| **BMP** | Lossless | Metadata çıkarma |
+| **TIFF** | Lossy (kalite 10–95) | TIFF içinde JPEG sıkıştırma |
+
 ### Özellikler
 
-✨ **Otomatik Optimizasyon** - Yüklenen PNG dosyaları otomatik olarak optimize edilir
-⚙️ **Sıkıştırma Seviyeleri** - 0'dan (en hızlı) 9'a (en küçük dosya) kadar ayarlayın
-🌐 **WebP Dönüştürme** - PNG dosyalarının yanında .webp sürümleri oluşturun
-💾 **Orijinal Yedekleme** - Optimize etmeden önce orijinal dosyaları yedekleyin
-🚀 **Toplu İşleme** - Tüm medya kütüphanesini optimize edin
-📊 **İstatistik Paneli** - Tasarruf ve optimizasyon ilerlemeyi takip edin
-🎯 **Bağımlılık Yok** - Standart WordPress kütüphaneleriyle çalışır (GD/Imagick)
+✨ **Yüklemede Otomatik Optimize** - Desteklenen tüm görseller yüklendiğinde anında sıkıştırılır
+🗜️ **PNG Lossless Sıkıştırma** - 0–9 seviyesi, görsel kalite hiç kaybolmaz
+📷 **JPEG Kalite Kontrolü** - 10'dan 95'e kadar ayarlanabilir kalite
+⚡ **Progressive JPEG** - Görseller tarayıcıda üstten alta kademeli yüklenir
+🌐 **WebP Dönüştürme** - Orijinalin yanında .webp dosyaları oluşturur
+🎞️ **GIF Optimizasyonu** - Animasyonlu GIF katmanlarını optimize eder
+💾 **Orijinal Yedekleme** - İşlem öncesi .optimizer-backup kopyası saklar
+🚀 **Toplu İşleme** - Tüm medya kütüphanesini tek seferde optimize eder
+📊 **İstatistik Paneli** - Toplam tasarruf ve küçülme yüzdesini takip eder
+🎯 **Harici Bağımlılık Yok** - Standart PHP uzantılarıyla çalışır (GD/Imagick)
+🔌 **Ayarlar Linki** - Eklentiler listesinden hızlı erişim
 
 ### Kurulum
 
 1. Plugin klasörünü `wp-content/plugins/` dizinine yerleştirin
 2. WordPress Eklentiler panelinden aktive edin
-3. Medya → PNG Optimizer'a giderek ayarları yapılandırın
+3. **Medya → Image Optimizer** sayfasına giderek yapılandırın
 
-### Kullanım
+### Ayarlar
 
-**Yüklemede otomatik optimize etme:** Otomatik sıkıştırma için ayarları etkinleştirin
-**Toplu optimize:** Medya kütüphanenizdeki tüm PNG dosyalarını bir kerede işleyin
-**Test ve ön izleme:** Kütüphanenize uygulamadan önce sıkıştırmayı kontrol edin
-**WebP dönüştürme:** Daha hızlı yükleme için modern WebP sürümleri oluşturun
+| Ayar | Açıklama |
+|------|----------|
+| Yüklemede Otomatik Optimize | Görsel yüklendiğinde otomatik sıkıştır |
+| PNG Sıkıştırma Seviyesi | 0 (en hızlı) ile 9 (en küçük), lossless |
+| JPEG Kalitesi | 10–95, önerilen 75–85 |
+| Progressive JPEG | Daha hızlı algılanan yükleme için progressive tarama |
+| WebP'ye Dönüştür | Her görselin yanına .webp oluşturur |
+| WebP Kalitesi | 1–100, önerilen 80 |
+| Orijinali Yedekle | Üzerine yazmadan önce .optimizer-backup kaydeder |
 
 ### Gereksinimler
 
@@ -96,38 +133,41 @@ For issues, suggestions, or contributions, visit the GitHub repository.
 
 ### Lisans
 
-MIT Lisansı - Özgürce kullanın ve değiştirin. Ayrıntılar için LICENSE dosyasına bakın.
-
-### Destek
-
-Sorunlar, öneriler veya katkılar için GitHub repository'sini ziyaret edin.
+MIT Lisansı — Özgürce kullanın, değiştirin ve dağıtın. Ayrıntılar için LICENSE dosyasına bakın.
 
 ---
 
 ## Deutsch
 
+### Unterstützte Formate
+
+| Format | Komprimierung | Besondere Funktionen |
+|--------|--------------|---------------------|
+| **PNG** | Verlustfrei (Stufe 0–9) | Metadaten entfernen, Alpha-Transparenz erhalten |
+| **JPEG** | Verlustbehaftet (Qualität 10–95) | Progressives JPEG, Metadaten entfernen, sRGB-Farbraum |
+| **WebP** | Verlustbehaftet (Qualität 1–100) | Imagick + GD-Unterstützung |
+| **GIF** | Verlustfrei | Animationsebenen-Optimierung |
+| **BMP** | Verlustfrei | Metadaten entfernen |
+| **TIFF** | Verlustbehaftet (Qualität 10–95) | JPEG-Komprimierung innerhalb von TIFF |
+
 ### Funktionen
 
-✨ **Automatische Optimierung** - PNG-Dateien werden beim Upload automatisch optimiert
-⚙️ **Komprimierungsstufen** - Passen Sie die Komprimierung von 0 (schnellste) bis 9 (kleinste Datei) an
-🌐 **WebP-Konvertierung** - Generieren Sie .webp-Versionen neben PNG-Dateien
-💾 **Sicherung der Originale** - Optional Sicherung der Originaldateien vor der Optimierung
-🚀 **Batch-Verarbeitung** - Optimieren Sie Ihre gesamte Medienbibliothek
-📊 **Statistik-Dashboard** - Verfolgen Sie Einsparungen und Optimierungsfortschritt
-🎯 **Keine Abhängigkeiten** - Funktioniert mit Standard-WordPress-Bibliotheken (GD/Imagick)
+✨ **Auto-Optimierung beim Upload** - Alle unterstützten Bilder werden beim Upload sofort komprimiert
+🗜️ **PNG Verlustfreie Komprimierung** - Stufe 0–9, kein Qualitätsverlust
+📷 **JPEG Qualitätskontrolle** - Einstellbare Qualität von 10 bis 95
+⚡ **Progressives JPEG** - Bilder laden im Browser von oben nach unten schrittweise
+🌐 **WebP-Konvertierung** - .webp-Dateien neben den Originalen generieren
+🎞️ **GIF-Optimierung** - Animierte GIF-Ebenen optimieren
+💾 **Originale sichern** - .optimizer-backup-Kopie vor der Verarbeitung behalten
+🚀 **Batch-Verarbeitung** - Gesamte Medienbibliothek auf einmal optimieren
+📊 **Statistik-Dashboard** - Gesamteinsparungen und Reduktionsprozentsatz verfolgen
+🎯 **Keine externen Abhängigkeiten** - Funktioniert mit Standard-PHP-Erweiterungen (GD/Imagick)
 
 ### Installation
 
-1. Laden Sie den Plugin-Ordner herunter und platzieren Sie ihn in `wp-content/plugins/`
-2. Aktivieren Sie ihn im WordPress-Plugin-Panel
-3. Gehen Sie zu Medien → PNG Optimizer zum Konfigurieren
-
-### Verwendung
-
-**Auto-Optimierung beim Upload:** Aktivieren Sie in den Einstellungen für automatische Komprimierung
-**Batch-Optimierung:** Verarbeiten Sie alle PNG-Dateien in Ihrer Medienbibliothek auf einmal
-**Test und Vorschau:** Überprüfen Sie die Komprimierung vor dem Anwenden auf Ihre Bibliothek
-**WebP-Konvertierung:** Generieren Sie moderne WebP-Versionen für schnelleres Laden
+1. Plugin-Ordner in `wp-content/plugins/` ablegen
+2. Im WordPress-Plugin-Panel aktivieren
+3. Zu **Medien → Image Optimizer** gehen und konfigurieren
 
 ### Anforderungen
 
@@ -137,38 +177,41 @@ Sorunlar, öneriler veya katkılar için GitHub repository'sini ziyaret edin.
 
 ### Lizenz
 
-MIT-Lizenz - Kostenlos zu verwenden und zu modifizieren. Siehe LICENSE-Datei für Details.
-
-### Unterstützung
-
-Für Probleme, Vorschläge oder Beiträge besuchen Sie das GitHub-Repository.
+MIT-Lizenz — Kostenlos zu verwenden, zu modifizieren und zu verteilen.
 
 ---
 
 ## Español
 
+### Formatos Compatibles
+
+| Formato | Compresión | Características Especiales |
+|---------|-----------|---------------------------|
+| **PNG** | Sin pérdida (nivel 0–9) | Eliminación de metadatos, transparencia alfa preservada |
+| **JPEG** | Con pérdida (calidad 10–95) | JPEG progresivo, eliminación de metadatos, espacio de color sRGB |
+| **WebP** | Con pérdida (calidad 1–100) | Soporte Imagick + GD |
+| **GIF** | Sin pérdida | Optimización de capas de animación |
+| **BMP** | Sin pérdida | Eliminación de metadatos |
+| **TIFF** | Con pérdida (calidad 10–95) | Compresión JPEG dentro de TIFF |
+
 ### Características
 
-✨ **Optimización Automática** - Los archivos PNG se optimizan automáticamente al cargar
-⚙️ **Niveles de Compresión** - Ajuste la compresión de 0 (más rápido) a 9 (archivo más pequeño)
-🌐 **Conversión a WebP** - Genere versiones .webp junto con archivos PNG
-💾 **Copia de Seguridad Original** - Copia de seguridad opcional de archivos originales antes de optimizar
-🚀 **Procesamiento por Lotes** - Optimice toda su biblioteca de medios
-📊 **Panel de Estadísticas** - Rastree ahorros y progreso de optimización
-🎯 **Sin Dependencias** - Funciona con bibliotecas estándar de WordPress (GD/Imagick)
+✨ **Auto-Optimizar al Subir** - Todas las imágenes compatibles se comprimen al instante al subir
+🗜️ **Compresión PNG Sin Pérdida** - Nivel 0–9, cero pérdida de calidad visual
+📷 **Control de Calidad JPEG** - Calidad ajustable de 10 a 95
+⚡ **JPEG Progresivo** - Las imágenes se cargan de arriba a abajo progresivamente en los navegadores
+🌐 **Conversión a WebP** - Generar archivos .webp junto a los originales
+🎞️ **Optimización GIF** - Optimizar capas de GIF animados
+💾 **Copia de Seguridad** - Guardar copia .optimizer-backup antes de procesar
+🚀 **Procesamiento por Lotes** - Optimizar toda la biblioteca de medios a la vez
+📊 **Panel de Estadísticas** - Seguimiento de ahorros totales y porcentaje de reducción
+🎯 **Sin Dependencias Externas** - Funciona con extensiones PHP estándar (GD/Imagick)
 
 ### Instalación
 
-1. Descargue la carpeta del plugin y colóquela en `wp-content/plugins/`
-2. Active desde el panel de Plugins de WordPress
-3. Vaya a Medios → PNG Optimizer para configurar
-
-### Uso
-
-**Optimizar automáticamente al cargar:** Active en configuración para compresión automática
-**Optimización por lotes:** Procese todos los archivos PNG en su biblioteca de medios a la vez
-**Prueba y vista previa:** Verifique la compresión antes de aplicar a su biblioteca
-**Conversión a WebP:** Genere versiones WebP modernas para cargas más rápidas
+1. Colocar la carpeta del plugin en `wp-content/plugins/`
+2. Activar desde el panel de Plugins de WordPress
+3. Ir a **Medios → Image Optimizer** para configurar
 
 ### Requisitos
 
@@ -178,79 +221,85 @@ Für Probleme, Vorschläge oder Beiträge besuchen Sie das GitHub-Repository.
 
 ### Licencia
 
-Licencia MIT - Libre de usar y modificar. Ver archivo LICENSE para detalles.
-
-### Soporte
-
-Para problemas, sugerencias o contribuciones, visite el repositorio de GitHub.
+Licencia MIT — Libre de usar, modificar y distribuir.
 
 ---
 
 ## 日本語
 
+### 対応フォーマット
+
+| フォーマット | 圧縮方式 | 特別な機能 |
+|------------|---------|-----------|
+| **PNG** | 可逆（レベル0–9） | メタデータ削除、アルファ透明度保持 |
+| **JPEG** | 非可逆（品質10–95） | プログレッシブJPEG、メタデータ削除、sRGB色空間 |
+| **WebP** | 非可逆（品質1–100） | Imagick + GD対応 |
+| **GIF** | 可逆 | アニメーションレイヤー最適化 |
+| **BMP** | 可逆 | メタデータ削除 |
+| **TIFF** | 非可逆（品質10–95） | TIFF内のJPEG圧縮 |
+
 ### 機能
 
-✨ **自動最適化** - アップロード時にPNGファイルが自動的に最適化されます
-⚙️ **圧縮レベル** - 0（最速）から9（最小ファイル）まで圧縮を調整
-🌐 **WebP変換** - PNGファイルと並んでWebPバージョンを生成
-💾 **オリジナルバックアップ** - 最適化前にオリジナルファイルをオプションでバックアップ
-🚀 **一括処理** - メディアライブラリ全体を最適化
-📊 **統計ダッシュボード** - 節約と最適化の進捗を追跡
-🎯 **依存関係なし** - 標準WordPressライブラリで動作（GD/Imagick）
+✨ **アップロード時自動最適化** - 対応する全画像がアップロード時に即座に圧縮
+🗜️ **PNG可逆圧縮** - レベル0–9、視覚的品質損失ゼロ
+📷 **JPEG品質コントロール** - 10から95まで調整可能な品質
+⚡ **プログレッシブJPEG** - ブラウザで画像が上から下へ段階的に読み込まれる
+🌐 **WebP変換** - オリジナルの隣に.webpファイルを生成
+🎞️ **GIF最適化** - アニメーションGIFレイヤーを最適化
+💾 **オリジナルバックアップ** - 処理前に.optimizer-backupコピーを保持
+🚀 **一括処理** - メディアライブラリ全体を一度に最適化
+📊 **統計ダッシュボード** - 合計節約量と削減率を追跡
+🎯 **外部依存関係なし** - 標準PHP拡張機能で動作（GD/Imagick）
 
 ### インストール
 
-1. プラグインフォルダをダウンロードして `wp-content/plugins/` に配置
+1. プラグインフォルダを `wp-content/plugins/` に配置
 2. WordPressプラグインパネルから有効化
-3. メディア → PNG Optimizerに移動して設定
-
-### 使用方法
-
-**アップロード時に自動最適化：** 自動圧縮の設定で有効化
-**一括最適化：** メディアライブラリのすべてのPNGファイルを一度に処理
-**テストとプレビュー：** ライブラリに適用する前に圧縮を確認
-**WebP変換：** より高速な読み込みのための最新のWebPバージョンを生成
+3. **メディア → Image Optimizer** に移動して設定
 
 ### 要件
 
 - WordPress 5.0以上
 - PHP 7.2以上
-- GDライブラリまたはImagemagick（推奨）
+- GDライブラリまたはImagick（推奨）
 
 ### ライセンス
 
-MITライセンス - 自由に使用・改変可能。詳細はLICENSEファイルを参照。
-
-### サポート
-
-問題、提案、または貢献については、GitHubリポジトリにアクセスしてください。
+MITライセンス — 自由に使用、修正、配布可能。
 
 ---
 
 ## 中文
 
+### 支持的格式
+
+| 格式 | 压缩方式 | 特殊功能 |
+|------|---------|---------|
+| **PNG** | 无损（级别0–9） | 去除元数据，保留Alpha透明度 |
+| **JPEG** | 有损（质量10–95） | 渐进式JPEG，去除元数据，sRGB色彩空间 |
+| **WebP** | 有损（质量1–100） | Imagick + GD支持 |
+| **GIF** | 无损 | 动画图层优化 |
+| **BMP** | 无损 | 去除元数据 |
+| **TIFF** | 有损（质量10–95） | TIFF内的JPEG压缩 |
+
 ### 功能特性
 
-✨ **自动优化** - 上传时自动优化PNG文件
-⚙️ **压缩等级** - 从0（最快）到9（最小文件）调整压缩
-🌐 **WebP转换** - 在PNG文件旁生成.webp版本
-💾 **原始文件备份** - 优化前可选备份原始文件
-🚀 **批量处理** - 优化整个媒体库
-📊 **统计仪表板** - 跟踪节省和优化进度
-🎯 **无依赖** - 适用于标准WordPress库（GD/Imagick）
+✨ **上传时自动优化** - 所有支持的图像在上传时立即压缩
+🗜️ **PNG无损压缩** - 级别0–9，零视觉质量损失
+📷 **JPEG质量控制** - 从10到95可调质量
+⚡ **渐进式JPEG** - 图像在浏览器中从上到下逐渐加载
+🌐 **WebP转换** - 在原图旁边生成.webp文件
+🎞️ **GIF优化** - 优化动画GIF图层
+💾 **备份原件** - 处理前保留.optimizer-backup副本
+🚀 **批量处理** - 一次优化整个媒体库
+📊 **统计仪表板** - 跟踪总节省量和减少百分比
+🎯 **无外部依赖** - 使用标准PHP扩展工作（GD/Imagick）
 
 ### 安装
 
-1. 下载插件文件夹并将其放在 `wp-content/plugins/` 中
+1. 将插件文件夹放置在 `wp-content/plugins/` 中
 2. 从WordPress插件面板激活
-3. 转到媒体 → PNG Optimizer进行配置
-
-### 使用方法
-
-**上传时自动优化：** 在设置中启用自动压缩
-**批量优化：** 一次处理媒体库中的所有PNG文件
-**测试和预览：** 应用到库之前检查压缩
-**WebP转换：** 为更快速的加载生成现代WebP版本
+3. 转到 **媒体 → Image Optimizer** 进行配置
 
 ### 要求
 
@@ -260,38 +309,41 @@ MITライセンス - 自由に使用・改変可能。詳細はLICENSEファイ�
 
 ### 许可证
 
-MIT许可证 - 自由使用和修改。详见LICENSE文件。
-
-### 支持
-
-有关问题、建议或贡献，请访问GitHub存储库。
+MIT许可证 — 自由使用、修改和分发。
 
 ---
 
 ## العربية
 
+### الصيغ المدعومة
+
+| الصيغة | الضغط | ميزات خاصة |
+|--------|------|------------|
+| **PNG** | بدون فقدان (مستوى 0–9) | إزالة البيانات الوصفية، الحفاظ على شفافية ألفا |
+| **JPEG** | مع فقدان (جودة 10–95) | JPEG تدريجي، إزالة البيانات الوصفية، فضاء لون sRGB |
+| **WebP** | مع فقدان (جودة 1–100) | دعم Imagick + GD |
+| **GIF** | بدون فقدان | تحسين طبقات الرسوم المتحركة |
+| **BMP** | بدون فقدان | إزالة البيانات الوصفية |
+| **TIFF** | مع فقدان (جودة 10–95) | ضغط JPEG داخل TIFF |
+
 ### المميزات
 
-✨ **التحسين التلقائي** - يتم تحسين ملفات PNG تلقائياً عند التحميل
-⚙️ **مستويات الضغط** - اضبط الضغط من 0 (الأسرع) إلى 9 (أصغر ملف)
-🌐 **تحويل WebP** - قم بإنشاء إصدارات .webp بجانب ملفات PNG
-💾 **نسخ احتياطية أصلية** - نسخة احتياطية اختيارية للملفات الأصلية قبل التحسين
-🚀 **المعالجة الجماعية** - قم بتحسين مكتبة الوسائط بالكاملة
-📊 **لوحة إحصائيات** - تابع المدخرات وتقدم التحسين
-🎯 **بدون اعتماديات** - يعمل مع مكتبات WordPress القياسية (GD/Imagick)
+✨ **التحسين التلقائي عند التحميل** - يتم ضغط جميع الصور المدعومة فوراً عند التحميل
+🗜️ **ضغط PNG بدون فقدان** - المستوى 0–9، صفر خسارة في الجودة البصرية
+📷 **التحكم في جودة JPEG** - جودة قابلة للضبط من 10 إلى 95
+⚡ **JPEG التدريجي** - تحميل الصور تدريجياً من الأعلى إلى الأسفل في المتصفحات
+🌐 **التحويل إلى WebP** - إنشاء ملفات .webp بجانب الأصليات
+🎞️ **تحسين GIF** - تحسين طبقات GIF المتحركة
+💾 **نسخ احتياطية للأصليات** - الاحتفاظ بنسخة .optimizer-backup قبل المعالجة
+🚀 **المعالجة الجماعية** - تحسين مكتبة الوسائط بالكامل دفعة واحدة
+📊 **لوحة الإحصائيات** - تتبع إجمالي المدخرات ونسبة التخفيض
+🎯 **بدون تبعيات خارجية** - يعمل مع ملحقات PHP القياسية (GD/Imagick)
 
 ### التثبيت
 
-1. قم بتحميل مجلد البرنامج الإضافي وضعه في `wp-content/plugins/`
-2. قم بتفعيله من لوحة البرامج الإضافية في WordPress
-3. انتقل إلى الوسائط → PNG Optimizer للتكوين
-
-### الاستخدام
-
-**التحسين التلقائي عند التحميل:** فعّل في الإعدادات للضغط التلقائي
-**التحسين الجماعي:** معالجة جميع ملفات PNG في مكتبة الوسائط مرة واحدة
-**الاختبار والمعاينة:** تحقق من الضغط قبل التطبيق على مكتبتك
-**تحويل WebP:** قم بإنشاء إصدارات WebP الحديثة للتحميل الأسرع
+1. ضع مجلد البرنامج الإضافي في `wp-content/plugins/`
+2. فعّله من لوحة البرامج الإضافية في WordPress
+3. انتقل إلى **الوسائط → Image Optimizer** للتكوين
 
 ### المتطلبات
 
@@ -301,23 +353,19 @@ MIT许可证 - 自由使用和修改。详见LICENSE文件。
 
 ### الترخيص
 
-ترخيص MIT - مجاني الاستخدام والتعديل. راجع ملف LICENSE للتفاصيل.
-
-### الدعم
-
-للمشاكل أو الاقتراحات أو المساهمات، قم بزيارة مستودع GitHub.
+ترخيص MIT — مجاني للاستخدام والتعديل والتوزيع. راجع ملف LICENSE للتفاصيل.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Feel free to fork, modify, and submit improvements.
+Contributions are welcome! Feel free to fork, modify, and submit pull requests.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
-**Free Software | Open Source | MIT License**
+**Free Software · Open Source · MIT License**
 
 ---
 
