@@ -1,0 +1,28 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Node / build tools
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# Composer
+vendor/
+
+# WordPress
+*.log
+wp-content/debug.log
+
+# Backup files created by the plugin itself
+*.png-opt-backup
+
+# Distribution zips
+*.zip
+dist/

@@ -1,0 +1,124 @@
+/* PNG Optimizer – Admin Styles */
+
+.png-opt-wrap h1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.6rem;
+}
+
+/* ── Stats bar ──────────────────────────────────────────────── */
+.png-opt-stats-bar {
+    display: flex;
+    gap: 16px;
+    margin: 16px 0 24px;
+    flex-wrap: wrap;
+}
+
+.png-opt-stat {
+    flex: 1;
+    min-width: 120px;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 16px 20px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+
+.png-opt-stat-number {
+    display: block;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #2271b1;
+    line-height: 1;
+}
+
+.png-opt-stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #646970;
+    margin-top: 4px;
+}
+
+/* ── Two-column layout ──────────────────────────────────────── */
+.png-opt-columns {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.png-opt-columns > .png-opt-card:first-child {
+    flex: 2;
+    min-width: 380px;
+}
+
+.png-opt-sidebar {
+    flex: 1;
+    min-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.png-opt-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 20px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+
+.png-opt-card h2 {
+    font-size: 1rem;
+    margin: 0 0 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+/* ── Progress bar ───────────────────────────────────────────── */
+.png-opt-progress-bar {
+    background: #f0f0f1;
+    border-radius: 4px;
+    height: 12px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.png-opt-progress-fill {
+    background: linear-gradient(90deg, #2271b1, #72aee6);
+    height: 100%;
+    width: 0;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* ── Badges ─────────────────────────────────────────────────── */
+.png-opt-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.png-opt-badge-ok    { background: #edfaef; color: #1a6626; }
+.png-opt-badge-warn  { background: #fcf9e8; color: #8a6d3b; }
+.png-opt-badge-error { background: #fce8e8; color: #8a1515; }
+
+/* ── Bulk result ────────────────────────────────────────────── */
+#png-opt-bulk-result {
+    margin-top: 12px;
+    font-size: 0.9rem;
+}
+
+#png-opt-bulk-result.success { color: #1a6626; }
+#png-opt-bulk-result.error   { color: #8a1515; }
+
+/* ── Media column ───────────────────────────────────────────── */
+.column-png_optimizer {
+    width: 90px;
+    text-align: center;
+}

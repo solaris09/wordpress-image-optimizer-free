@@ -1,0 +1,353 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+class PNG_Optimizer_Admin {
+
+    public function __construct() {
+        add_action( 'admin_menu',             [ $this, 'add_menu' ] );
+        add_action( 'admin_init',             [ $this, 'register_settings' ] );
+        add_action( 'admin_enqueue_scripts',  [ $this, 'enqueue_assets' ] );
+
+        // Media library column
+        add_filter( 'manage_media_columns',          [ $this, 'add_media_column' ] );
+        add_action( 'manage_media_custom_column',    [ $this, 'render_media_column' ], 10, 2 );
+
+        // Optimize button in attachment edit screen
+        add_action( 'attachment_submitbox_misc_actions', [ $this, 'add_optimize_button' ] );
+        add_action( 'wp_ajax_png_opt_optimize_single',   [ $this, 'ajax_optimize_single' ] );
+
+        // Dashboard widget
+        add_action( 'wp_dashboard_setup', [ $this, 'register_dashboard_widget' ] );
+    }
+
+    public function add_menu() {
+        add_media_page(
+            __( 'PNG Optimizer', 'png-optimizer' ),
+            __( 'PNG Optimizer', 'png-optimizer' ),
+            'manage_options',
+            'png-optimizer',
+            [ $this, 'render_settings_page' ]
+        );
+    }
+
+    public function register_settings() {
+        register_setting( 'png_optimizer_group', 'png_optimizer_options', [
+            'sanitize_callback' => [ $this, 'sanitize_options' ],
+        ] );
+    }
+
+    public function sanitize_options( $input ) {
+        $clean = [];
+        $clean['auto_optimize']     = ! empty( $input['auto_optimize'] );
+        $clean['compression_level'] = isset( $input['compression_level'] ) ? max( 0, min( 9, (int) $input['compression_level'] ) ) : 6;
+        $clean['convert_webp']      = ! empty( $input['convert_webp'] );
+        $clean['webp_quality']      = isset( $input['webp_quality'] ) ? max( 1, min( 100, (int) $input['webp_quality'] ) ) : 80;
+        $clean['backup_originals']  = ! empty( $input['backup_originals'] );
+        return $clean;
+    }
+
+    public function enqueue_assets( $hook ) {
+        $allowed_hooks = [ 'media_page_png-optimizer', 'upload.php', 'post.php' ];
+        if ( ! in_array( $hook, $allowed_hooks, true ) ) {
+            return;
+        }
+        wp_enqueue_style(
+            'png-optimizer-admin',
+            PNG_OPT_PLUGIN_URL . 'assets/css/admin.css',
+            [],
+            PNG_OPT_VERSION
+        );
+        wp_enqueue_script(
+            'png-optimizer-admin',
+            PNG_OPT_PLUGIN_URL . 'assets/js/admin.js',
+            [ 'jquery' ],
+            PNG_OPT_VERSION,
+            true
+        );
+        wp_localize_script( 'png-optimizer-admin', 'pngOpt', [
+            'ajax_url' => admin_url( 'admin-ajax.php' ),
+            'nonce'    => wp_create_nonce( 'png_opt_nonce' ),
+            'i18n'     => [
+                'optimizing' => __( 'Optimizing…', 'png-optimizer' ),
+                'done'       => __( 'Done!', 'png-optimizer' ),
+                'error'      => __( 'Error. Try again.', 'png-optimizer' ),
+            ],
+        ] );
+    }
+
+    public function render_settings_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        $options = get_option( 'png_optimizer_options', [] );
+        $stats   = PNG_Optimizer_Core::get_stats_summary();
+        $lib     = PNG_Optimizer_Core::get_available_library();
+        $total   = PNG_Optimizer_Core::get_all_png_attachment_ids();
+        ?>
+        <div class="wrap png-opt-wrap">
+            <h1><span class="dashicons dashicons-images-alt2"></span> <?php esc_html_e( 'PNG Optimizer', 'png-optimizer' ); ?></h1>
+
+            <!-- Stats bar -->
+            <div class="png-opt-stats-bar">
+                <div class="png-opt-stat">
+                    <span class="png-opt-stat-number"><?php echo esc_html( number_format( (int) ( $stats->total_files ?? 0 ) ) ); ?></span>
+                    <span class="png-opt-stat-label"><?php esc_html_e( 'Files Optimized', 'png-optimizer' ); ?></span>
+                </div>
+                <div class="png-opt-stat">
+                    <span class="png-opt-stat-number"><?php echo esc_html( $this->format_bytes( (int) ( $stats->total_saved ?? 0 ) ) ); ?></span>
+                    <span class="png-opt-stat-label"><?php esc_html_e( 'Total Saved', 'png-optimizer' ); ?></span>
+                </div>
+                <div class="png-opt-stat">
+                    <?php
+                    $pct = 0;
+                    if ( ! empty( $stats->total_original ) && $stats->total_original > 0 ) {
+                        $pct = round( ( $stats->total_saved / $stats->total_original ) * 100, 1 );
+                    }
+                    ?>
+                    <span class="png-opt-stat-number"><?php echo esc_html( $pct ); ?>%</span>
+                    <span class="png-opt-stat-label"><?php esc_html_e( 'Avg Reduction', 'png-optimizer' ); ?></span>
+                </div>
+                <div class="png-opt-stat">
+                    <span class="png-opt-stat-number"><?php echo esc_html( count( $total ) ); ?></span>
+                    <span class="png-opt-stat-label"><?php esc_html_e( 'PNG Files in Library', 'png-optimizer' ); ?></span>
+                </div>
+            </div>
+
+            <div class="png-opt-columns">
+                <!-- Settings -->
+                <div class="png-opt-card">
+                    <h2><?php esc_html_e( 'Settings', 'png-optimizer' ); ?></h2>
+                    <form method="post" action="options.php">
+                        <?php settings_fields( 'png_optimizer_group' ); ?>
+
+                        <table class="form-table">
+                            <tr>
+                                <th><?php esc_html_e( 'Auto-Optimize on Upload', 'png-optimizer' ); ?></th>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" name="png_optimizer_options[auto_optimize]" value="1"
+                                            <?php checked( ! empty( $options['auto_optimize'] ) ); ?>>
+                                        <?php esc_html_e( 'Automatically optimize PNG files when uploaded', 'png-optimizer' ); ?>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Compression Level', 'png-optimizer' ); ?></th>
+                                <td>
+                                    <input type="range" name="png_optimizer_options[compression_level]"
+                                        min="0" max="9"
+                                        value="<?php echo esc_attr( $options['compression_level'] ?? 6 ); ?>"
+                                        oninput="document.getElementById('png-opt-level-val').textContent=this.value">
+                                    <span id="png-opt-level-val"><?php echo esc_html( $options['compression_level'] ?? 6 ); ?></span> / 9
+                                    <p class="description"><?php esc_html_e( '0 = no compression (fastest), 9 = max compression (slowest, smallest file). Lossless only.', 'png-optimizer' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Backup Originals', 'png-optimizer' ); ?></th>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" name="png_optimizer_options[backup_originals]" value="1"
+                                            <?php checked( ! empty( $options['backup_originals'] ) ); ?>>
+                                        <?php esc_html_e( 'Keep a .png-opt-backup copy of the original before optimizing', 'png-optimizer' ); ?>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Convert to WebP', 'png-optimizer' ); ?></th>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" name="png_optimizer_options[convert_webp]" value="1"
+                                            id="png-opt-webp-toggle"
+                                            <?php checked( ! empty( $options['convert_webp'] ) ); ?>>
+                                        <?php esc_html_e( 'Also generate a .webp version alongside each PNG', 'png-optimizer' ); ?>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr id="png-opt-webp-quality-row" <?php echo empty( $options['convert_webp'] ) ? 'style="display:none"' : ''; ?>>
+                                <th><?php esc_html_e( 'WebP Quality', 'png-optimizer' ); ?></th>
+                                <td>
+                                    <input type="number" name="png_optimizer_options[webp_quality]"
+                                        min="1" max="100"
+                                        value="<?php echo esc_attr( $options['webp_quality'] ?? 80 ); ?>"
+                                        style="width:70px"> / 100
+                                </td>
+                            </tr>
+                        </table>
+
+                        <?php submit_button( __( 'Save Settings', 'png-optimizer' ) ); ?>
+                    </form>
+                </div>
+
+                <!-- Bulk optimizer & system info -->
+                <div class="png-opt-sidebar">
+                    <div class="png-opt-card">
+                        <h2><?php esc_html_e( 'Bulk Optimize', 'png-optimizer' ); ?></h2>
+                        <p><?php printf( esc_html__( '%d PNG images found in your media library.', 'png-optimizer' ), count( $total ) ); ?></p>
+                        <div id="png-opt-bulk-progress" style="display:none">
+                            <div class="png-opt-progress-bar"><div class="png-opt-progress-fill" id="png-opt-progress-fill"></div></div>
+                            <p id="png-opt-bulk-status"></p>
+                        </div>
+                        <button id="png-opt-bulk-btn" class="button button-primary button-large">
+                            <?php esc_html_e( 'Start Bulk Optimization', 'png-optimizer' ); ?>
+                        </button>
+                        <div id="png-opt-bulk-result"></div>
+                    </div>
+
+                    <div class="png-opt-card">
+                        <h2><?php esc_html_e( 'System Info', 'png-optimizer' ); ?></h2>
+                        <table class="widefat striped">
+                            <tbody>
+                                <tr>
+                                    <td><?php esc_html_e( 'Active Library', 'png-optimizer' ); ?></td>
+                                    <td>
+                                        <?php if ( $lib === 'none' ) : ?>
+                                            <span class="png-opt-badge png-opt-badge-error"><?php esc_html_e( 'None — install GD or Imagick!', 'png-optimizer' ); ?></span>
+                                        <?php else : ?>
+                                            <span class="png-opt-badge png-opt-badge-ok"><?php echo esc_html( $lib ); ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><?php esc_html_e( 'Imagick', 'png-optimizer' ); ?></td>
+                                    <td><?php echo extension_loaded( 'imagick' ) ? '<span class="png-opt-badge png-opt-badge-ok">✓ Loaded</span>' : '<span class="png-opt-badge png-opt-badge-warn">✗ Not loaded</span>'; ?></td>
+                                </tr>
+                                <tr>
+                                    <td><?php esc_html_e( 'GD', 'png-optimizer' ); ?></td>
+                                    <td><?php echo extension_loaded( 'gd' ) ? '<span class="png-opt-badge png-opt-badge-ok">✓ Loaded</span>' : '<span class="png-opt-badge png-opt-badge-warn">✗ Not loaded</span>'; ?></td>
+                                </tr>
+                                <tr>
+                                    <td><?php esc_html_e( 'WebP Support (GD)', 'png-optimizer' ); ?></td>
+                                    <td><?php echo function_exists( 'imagewebp' ) ? '<span class="png-opt-badge png-opt-badge-ok">✓ Yes</span>' : '<span class="png-opt-badge png-opt-badge-warn">✗ No</span>'; ?></td>
+                                </tr>
+                                <tr>
+                                    <td><?php esc_html_e( 'PHP Version', 'png-optimizer' ); ?></td>
+                                    <td><?php echo esc_html( PHP_VERSION ); ?></td>
+                                </tr>
+                                <tr>
+                                    <td><?php esc_html_e( 'Max Execution Time', 'png-optimizer' ); ?></td>
+                                    <td><?php echo esc_html( ini_get( 'max_execution_time' ) ); ?>s</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    public function add_media_column( $columns ) {
+        $columns['png_optimizer'] = __( 'PNG Opt.', 'png-optimizer' );
+        return $columns;
+    }
+
+    public function render_media_column( $column, $post_id ) {
+        if ( $column !== 'png_optimizer' ) {
+            return;
+        }
+
+        $mime = get_post_mime_type( $post_id );
+        if ( $mime !== 'image/png' ) {
+            echo '<span style="color:#aaa">—</span>';
+            return;
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'png_optimizer_stats';
+        $row   = $wpdb->get_row( $wpdb->prepare(
+            "SELECT SUM(saved_bytes) as saved, SUM(original_size) as orig FROM $table WHERE attachment_id = %d",
+            $post_id
+        ) );
+
+        if ( $row && $row->saved > 0 ) {
+            $pct = $row->orig > 0 ? round( ( $row->saved / $row->orig ) * 100, 1 ) : 0;
+            echo '<span style="color:#2eb136;font-weight:600">-' . esc_html( $pct ) . '%</span>';
+            echo '<br><small>' . esc_html( $this->format_bytes( (int) $row->saved ) ) . ' saved</small>';
+        } else {
+            echo '<button class="button button-small png-opt-single-btn" data-id="' . esc_attr( $post_id ) . '">'
+                . esc_html__( 'Optimize', 'png-optimizer' )
+                . '</button>';
+        }
+    }
+
+    public function add_optimize_button() {
+        global $post;
+        if ( ! $post || get_post_mime_type( $post->ID ) !== 'image/png' ) {
+            return;
+        }
+        echo '<div class="misc-pub-section">';
+        echo '<button type="button" class="button png-opt-single-btn" data-id="' . esc_attr( $post->ID ) . '">'
+            . esc_html__( 'Optimize PNG', 'png-optimizer' )
+            . '</button>';
+        echo '<span id="png-opt-single-result-' . esc_attr( $post->ID ) . '" style="margin-left:8px"></span>';
+        echo '</div>';
+    }
+
+    public function ajax_optimize_single() {
+        check_ajax_referer( 'png_opt_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'upload_files' ) ) {
+            wp_send_json_error( [ 'message' => __( 'Permission denied.', 'png-optimizer' ) ] );
+        }
+
+        $id = isset( $_POST['attachment_id'] ) ? (int) $_POST['attachment_id'] : 0;
+        if ( ! $id ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid attachment.', 'png-optimizer' ) ] );
+        }
+
+        $optimizer = new PNG_Optimizer_Core();
+        $results   = $optimizer->optimize_attachment( $id );
+
+        if ( ! $results ) {
+            wp_send_json_error( [ 'message' => __( 'Optimization failed or file is already optimal.', 'png-optimizer' ) ] );
+        }
+
+        $total_saved    = array_sum( array_column( $results, 'saved_bytes' ) );
+        $total_original = array_sum( array_column( $results, 'original_size' ) );
+        $pct            = $total_original > 0 ? round( ( $total_saved / $total_original ) * 100, 1 ) : 0;
+
+        wp_send_json_success( [
+            'saved_bytes'   => $total_saved,
+            'saved_percent' => $pct,
+            'human'         => $this->format_bytes( $total_saved ),
+            'files'         => count( $results ),
+        ] );
+    }
+
+    public function register_dashboard_widget() {
+        wp_add_dashboard_widget(
+            'png_optimizer_widget',
+            __( 'PNG Optimizer Stats', 'png-optimizer' ),
+            [ $this, 'render_dashboard_widget' ]
+        );
+    }
+
+    public function render_dashboard_widget() {
+        $stats = PNG_Optimizer_Core::get_stats_summary();
+        $pct   = 0;
+        if ( ! empty( $stats->total_original ) && $stats->total_original > 0 ) {
+            $pct = round( ( $stats->total_saved / $stats->total_original ) * 100, 1 );
+        }
+        ?>
+        <ul style="margin:0">
+            <li><?php esc_html_e( 'Files optimized:', 'png-optimizer' ); ?> <strong><?php echo esc_html( number_format( (int) ( $stats->total_files ?? 0 ) ) ); ?></strong></li>
+            <li><?php esc_html_e( 'Total saved:', 'png-optimizer' ); ?> <strong><?php echo esc_html( $this->format_bytes( (int) ( $stats->total_saved ?? 0 ) ) ); ?></strong></li>
+            <li><?php esc_html_e( 'Avg reduction:', 'png-optimizer' ); ?> <strong><?php echo esc_html( $pct ); ?>%</strong></li>
+        </ul>
+        <p><a href="<?php echo esc_url( admin_url( 'upload.php?page=png-optimizer' ) ); ?>"><?php esc_html_e( 'Manage →', 'png-optimizer' ); ?></a></p>
+        <?php
+    }
+
+    private function format_bytes( $bytes ) {
+        if ( $bytes >= 1048576 ) {
+            return number_format( $bytes / 1048576, 2 ) . ' MB';
+        }
+        if ( $bytes >= 1024 ) {
+            return number_format( $bytes / 1024, 2 ) . ' KB';
+        }
+        return $bytes . ' B';
+    }
+}
