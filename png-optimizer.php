@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: PNG Optimizer
+ * Plugin Name: Image Optimizer
  * Plugin URI:  https://github.com/solaris09/wordpress-image-optimizer-free
- * Description: Automatically optimizes PNG images on upload and provides bulk optimization. Supports lossless compression via GD/Imagick and optional WebP conversion.
- * Version:     1.0.0
- * Author:      Cemal Hekimoglu
+ * Description: Automatically optimizes all image formats (PNG, JPEG, WebP, GIF, BMP, TIFF) on upload. Supports lossless compression via GD/Imagick with bulk optimization and optional WebP conversion.
+ * Version:     1.1.0
+ * Author:      CEMAL HEKIMOGLU
  * License:     GPL-2.0+
  * Text Domain: png-optimizer
  */
@@ -31,14 +31,21 @@ function png_optimizer_init() {
 add_action( 'plugins_loaded', 'png_optimizer_init' );
 
 function png_optimizer_on_upload( $upload ) {
-    if ( isset( $upload['file'] ) && strtolower( pathinfo( $upload['file'], PATHINFO_EXTENSION ) ) === 'png' ) {
-        $options   = get_option( 'png_optimizer_options', [] );
-        $auto      = isset( $options['auto_optimize'] ) ? (bool) $options['auto_optimize'] : true;
+    if ( ! isset( $upload['file'] ) ) {
+        return $upload;
+    }
 
-        if ( $auto ) {
-            $optimizer = new PNG_Optimizer_Core();
-            $optimizer->optimize_file( $upload['file'] );
-        }
+    $ext = strtolower( pathinfo( $upload['file'], PATHINFO_EXTENSION ) );
+    if ( ! in_array( $ext, [ 'png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tiff', 'tif' ], true ) ) {
+        return $upload;
+    }
+
+    $options = get_option( 'png_optimizer_options', [] );
+    $auto    = isset( $options['auto_optimize'] ) ? (bool) $options['auto_optimize'] : true;
+
+    if ( $auto ) {
+        $optimizer = new PNG_Optimizer_Core();
+        $optimizer->optimize_file( $upload['file'] );
     }
     return $upload;
 }
@@ -51,6 +58,8 @@ function png_optimizer_activate() {
         'convert_webp'     => false,
         'webp_quality'     => 80,
         'backup_originals' => true,
+        'jpeg_quality'     => 80,
+        'progressive_jpeg' => false,
     ];
     add_option( 'png_optimizer_options', $defaults );
 

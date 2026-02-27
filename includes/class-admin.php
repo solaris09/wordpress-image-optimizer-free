@@ -45,6 +45,8 @@ class PNG_Optimizer_Admin {
         $clean['convert_webp']      = ! empty( $input['convert_webp'] );
         $clean['webp_quality']      = isset( $input['webp_quality'] ) ? max( 1, min( 100, (int) $input['webp_quality'] ) ) : 80;
         $clean['backup_originals']  = ! empty( $input['backup_originals'] );
+        $clean['jpeg_quality']      = isset( $input['jpeg_quality'] ) ? max( 10, min( 95, (int) $input['jpeg_quality'] ) ) : 80;
+        $clean['progressive_jpeg']  = ! empty( $input['progressive_jpeg'] );
         return $clean;
     }
 
@@ -112,7 +114,7 @@ class PNG_Optimizer_Admin {
                 </div>
                 <div class="png-opt-stat">
                     <span class="png-opt-stat-number"><?php echo esc_html( count( $total ) ); ?></span>
-                    <span class="png-opt-stat-label"><?php esc_html_e( 'PNG Files in Library', 'png-optimizer' ); ?></span>
+                    <span class="png-opt-stat-label"><?php esc_html_e( 'Supported Images', 'png-optimizer' ); ?></span>
                 </div>
             </div>
 
@@ -175,6 +177,26 @@ class PNG_Optimizer_Admin {
                                         style="width:70px"> / 100
                                 </td>
                             </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'JPEG Quality', 'png-optimizer' ); ?></th>
+                                <td>
+                                    <input type="number" name="png_optimizer_options[jpeg_quality]"
+                                        min="10" max="95"
+                                        value="<?php echo esc_attr( $options['jpeg_quality'] ?? 80 ); ?>"
+                                        style="width:70px"> / 95
+                                    <p class="description"><?php esc_html_e( '10 = smallest file (low quality), 95 = highest quality (larger file). Recommended: 75-85', 'png-optimizer' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Progressive JPEG', 'png-optimizer' ); ?></th>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" name="png_optimizer_options[progressive_jpeg]" value="1"
+                                            <?php checked( ! empty( $options['progressive_jpeg'] ) ); ?>>
+                                        <?php esc_html_e( 'Generate progressive JPEGs (better perceived loading speed)', 'png-optimizer' ); ?>
+                                    </label>
+                                </td>
+                            </tr>
                         </table>
 
                         <?php submit_button( __( 'Save Settings', 'png-optimizer' ) ); ?>
@@ -185,7 +207,7 @@ class PNG_Optimizer_Admin {
                 <div class="png-opt-sidebar">
                     <div class="png-opt-card">
                         <h2><?php esc_html_e( 'Bulk Optimize', 'png-optimizer' ); ?></h2>
-                        <p><?php printf( esc_html__( '%d PNG images found in your media library.', 'png-optimizer' ), count( $total ) ); ?></p>
+                        <p><?php printf( esc_html__( '%d optimizable images found in your media library.', 'png-optimizer' ), count( $total ) ); ?></p>
                         <div id="png-opt-bulk-progress" style="display:none">
                             <div class="png-opt-progress-bar"><div class="png-opt-progress-fill" id="png-opt-progress-fill"></div></div>
                             <p id="png-opt-bulk-status"></p>
@@ -250,7 +272,8 @@ class PNG_Optimizer_Admin {
         }
 
         $mime = get_post_mime_type( $post_id );
-        if ( $mime !== 'image/png' ) {
+        $supported = [ 'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/x-ms-bmp', 'image/x-bmp', 'image/bmp', 'image/tiff', 'image/x-tiff' ];
+        if ( ! in_array( $mime, $supported, true ) ) {
             echo '<span style="color:#aaa">—</span>';
             return;
         }
@@ -275,7 +298,12 @@ class PNG_Optimizer_Admin {
 
     public function add_optimize_button() {
         global $post;
-        if ( ! $post || get_post_mime_type( $post->ID ) !== 'image/png' ) {
+        if ( ! $post ) {
+            return;
+        }
+        $mime = get_post_mime_type( $post->ID );
+        $supported = [ 'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/x-ms-bmp', 'image/x-bmp', 'image/bmp', 'image/tiff', 'image/x-tiff' ];
+        if ( ! in_array( $mime, $supported, true ) ) {
             return;
         }
         echo '<div class="misc-pub-section">';
