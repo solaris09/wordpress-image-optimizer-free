@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Core image optimization logic for PNG and JPEG.
+ * Core image optimization logic for PNG, JPEG, WebP, GIF, BMP, TIFF.
  * Uses Imagick (preferred) or GD (fallback).
  */
 class PNG_Optimizer_Core {
@@ -16,10 +16,10 @@ class PNG_Optimizer_Core {
     }
 
     /**
-     * Optimize a single image file on disk (PNG or JPEG).
+     * Optimize a single image file on disk.
      *
-     * @param  string      $file_path      Absolute path to the image file.
-     * @param  int         $attachment_id  Optional WP attachment ID for stat tracking.
+     * @param  string $file_path      Absolute path to the image file.
+     * @param  int    $attachment_id  Optional WP attachment ID for stat tracking.
      * @return array|false Result array on success, false on failure.
      */
     public function optimize_file( $file_path, $attachment_id = 0 ) {
@@ -80,7 +80,7 @@ class PNG_Optimizer_Core {
         $new_size = filesize( $file_path );
         $saved    = $original_size - $new_size;
 
-        // If optimized file is larger, restore backup
+        // If optimized file is larger, restore from backup
         if ( $new_size >= $original_size ) {
             if ( ! empty( $this->options['backup_originals'] ) ) {
                 copy( $file_path . '.optimizer-backup', $file_path );
@@ -92,6 +92,11 @@ class PNG_Optimizer_Core {
         // Record stats
         $this->record_stat( $attachment_id, $file_path, $original_size, $new_size, max( 0, $saved ) );
 
+        // Generate WebP version if enabled (PNG and JPEG only)
+        if ( ! empty( $this->options['convert_webp'] ) && in_array( $ext, [ 'png', 'jpg', 'jpeg' ], true ) ) {
+            $this->create_webp_version( $file_path, $ext );
+        }
+
         return [
             'file'          => $file_path,
             'original_size' => $original_size,
@@ -101,20 +106,19 @@ class PNG_Optimizer_Core {
         ];
     }
 
-    /**
-     * Optimize PNG with lossless compression.
-     */
+    // -------------------------------------------------------------------------
+    // PNG
+    // -------------------------------------------------------------------------
+
     private function optimize_png( $file_path ) {
         if ( extension_loaded( 'imagick' ) ) {
             if ( $this->optimize_png_imagick( $file_path ) ) {
                 return true;
             }
         }
-
         if ( extension_loaded( 'gd' ) ) {
             return $this->optimize_png_gd( $file_path );
         }
-
         return false;
     }
 
@@ -122,19 +126,23 @@ class PNG_Optimizer_Core {
         try {
             $imagick = new Imagick( $file_path );
             $imagick->setImageFormat( 'PNG' );
-
-            // Strip metadata
             $imagick->stripImage();
 
-            // Enhanced compression
             $level = isset( $this->options['compression_level'] ) ? (int) $this->options['compression_level'] : 6;
             $level = max( 0, min( 9, $level ) );
-            $imagick->setImageCompressionQuality( $level * 10 );
-            $imagick->setOption( 'png:compression-level', (string) $level );
-            $imagick->setOption( 'png:compression-filter', '5' );
-            $imagick->setOption( 'png:compression-strategy', '1' );
 
-            // Remove extra PNG chunks for maximum optimization
+            // Use ZIP compression explicitly
+            $imagick->setImageCompression( Imagick::COMPRESSION_ZIP );
+
+            // Composite quality: compression_level * 10 + filter (5 = Paeth, best general filter)
+            $imagick->setImageCompressionQuality( $level * 10 + 5 );
+
+            // Fine-grained PNG options — Paeth filter + default strategy for best overall compression
+            $imagick->setOption( 'png:compression-level',   (string) $level );
+            $imagick->setOption( 'png:compression-filter',  '5' );  // Paeth
+            $imagick->setOption( 'png:compression-strategy','0' );  // Z_DEFAULT_STRATEGY
+
+            // Strip unnecessary PNG chunks
             $imagick->setOption( 'png:exclude-chunk', 'all' );
             $imagick->setOption( 'png:include-chunk', 'none,trns,gAMA' );
 
@@ -158,25 +166,25 @@ class PNG_Optimizer_Core {
         $level = isset( $this->options['compression_level'] ) ? (int) $this->options['compression_level'] : 6;
         $level = max( 0, min( 9, $level ) );
 
-        $result = imagepng( $image, $file_path, $level );
+        // PNG_ALL_FILTERS lets the encoder try every filter and pick the smallest result
+        $result = imagepng( $image, $file_path, $level, PNG_ALL_FILTERS );
         imagedestroy( $image );
         return $result;
     }
 
-    /**
-     * Optimize JPEG with quality adjustment.
-     */
+    // -------------------------------------------------------------------------
+    // JPEG
+    // -------------------------------------------------------------------------
+
     private function optimize_jpeg( $file_path ) {
         if ( extension_loaded( 'imagick' ) ) {
             if ( $this->optimize_jpeg_imagick( $file_path ) ) {
                 return true;
             }
         }
-
         if ( extension_loaded( 'gd' ) ) {
             return $this->optimize_jpeg_gd( $file_path );
         }
-
         return false;
     }
 
@@ -184,21 +192,21 @@ class PNG_Optimizer_Core {
         try {
             $imagick = new Imagick( $file_path );
             $imagick->setImageFormat( 'JPEG' );
-
-            // Strip metadata for smaller file size
             $imagick->stripImage();
 
-            // Enhanced JPEG compression
             $quality = isset( $this->options['jpeg_quality'] ) ? (int) $this->options['jpeg_quality'] : 80;
             $quality = max( 10, min( 95, $quality ) );
             $imagick->setImageCompressionQuality( $quality );
 
-            // Enable progressive JPEG if enabled
+            // 4:2:0 chroma subsampling — reduces file size ~15-20% with minimal visual impact
+            $imagick->setSamplingFactors( [ '2x2', '1x1', '1x1' ] );
+
+            // Progressive JPEG if enabled
             if ( ! empty( $this->options['progressive_jpeg'] ) ) {
                 $imagick->setImageInterlaceScheme( Imagick::INTERLACE_JPEG );
             }
 
-            // Optimize colorspace
+            // Normalize colorspace
             $imagick->transformImageColorspace( Imagick::COLORSPACE_SRGB );
 
             $written = $imagick->writeImage( $file_path );
@@ -223,9 +231,10 @@ class PNG_Optimizer_Core {
         return $result;
     }
 
-    /**
-     * Optimize WebP.
-     */
+    // -------------------------------------------------------------------------
+    // WebP (optimize existing WebP files)
+    // -------------------------------------------------------------------------
+
     private function optimize_webp( $file_path ) {
         if ( extension_loaded( 'imagick' ) ) {
             if ( $this->optimize_webp_imagick( $file_path ) ) {
@@ -261,14 +270,74 @@ class PNG_Optimizer_Core {
         }
         $quality = isset( $this->options['webp_quality'] ) ? (int) $this->options['webp_quality'] : 80;
         $quality = max( 1, min( 100, $quality ) );
-        $result = imagewebp( $image, $file_path, $quality );
+        $result  = imagewebp( $image, $file_path, $quality );
         imagedestroy( $image );
         return $result;
     }
 
+    // -------------------------------------------------------------------------
+    // WebP conversion (PNG/JPEG → WebP)
+    // -------------------------------------------------------------------------
+
     /**
-     * Optimize GIF.
+     * Generate a .webp file next to the source image.
+     * Called when the "Convert to WebP" option is enabled.
+     *
+     * @param  string $file_path Source image path (PNG or JPEG).
+     * @param  string $ext       File extension without dot (png|jpg|jpeg).
+     * @return bool
      */
+    private function create_webp_version( $file_path, $ext ) {
+        $webp_path = substr( $file_path, 0, -strlen( $ext ) ) . 'webp';
+
+        $quality = isset( $this->options['webp_quality'] ) ? (int) $this->options['webp_quality'] : 80;
+        $quality = max( 1, min( 100, $quality ) );
+
+        // Try Imagick first
+        if ( extension_loaded( 'imagick' ) ) {
+            try {
+                $imagick = new Imagick( $file_path );
+                $imagick->setImageFormat( 'WEBP' );
+                $imagick->stripImage();
+                $imagick->setImageCompressionQuality( $quality );
+                $written = $imagick->writeImage( $webp_path );
+                $imagick->destroy();
+                if ( $written ) {
+                    return true;
+                }
+            } catch ( Exception $e ) {
+                // fall through to GD
+            }
+        }
+
+        // GD fallback
+        if ( extension_loaded( 'gd' ) && function_exists( 'imagewebp' ) ) {
+            $image = null;
+
+            if ( $ext === 'png' ) {
+                $image = @imagecreatefrompng( $file_path );
+                if ( $image ) {
+                    imagealphablending( $image, false );
+                    imagesavealpha( $image, true );
+                }
+            } elseif ( in_array( $ext, [ 'jpg', 'jpeg' ], true ) ) {
+                $image = @imagecreatefromjpeg( $file_path );
+            }
+
+            if ( $image ) {
+                $result = imagewebp( $image, $webp_path, $quality );
+                imagedestroy( $image );
+                return (bool) $result;
+            }
+        }
+
+        return false;
+    }
+
+    // -------------------------------------------------------------------------
+    // GIF
+    // -------------------------------------------------------------------------
+
     private function optimize_gif( $file_path ) {
         if ( extension_loaded( 'imagick' ) ) {
             if ( $this->optimize_gif_imagick( $file_path ) ) {
@@ -305,9 +374,10 @@ class PNG_Optimizer_Core {
         return $result;
     }
 
-    /**
-     * Optimize BMP.
-     */
+    // -------------------------------------------------------------------------
+    // BMP
+    // -------------------------------------------------------------------------
+
     private function optimize_bmp( $file_path ) {
         if ( extension_loaded( 'imagick' ) ) {
             return $this->optimize_bmp_imagick( $file_path );
@@ -328,9 +398,10 @@ class PNG_Optimizer_Core {
         }
     }
 
-    /**
-     * Optimize TIFF.
-     */
+    // -------------------------------------------------------------------------
+    // TIFF
+    // -------------------------------------------------------------------------
+
     private function optimize_tiff( $file_path ) {
         if ( extension_loaded( 'imagick' ) ) {
             return $this->optimize_tiff_imagick( $file_path );
@@ -355,34 +426,9 @@ class PNG_Optimizer_Core {
         }
     }
 
-    /**
-     * Get all image attachments (all supported formats).
-     */
-    public static function get_all_image_attachment_ids() {
-        global $wpdb;
-        return $wpdb->get_col(
-            "SELECT ID FROM {$wpdb->posts}
-             WHERE post_type = 'attachment'
-             AND post_status = 'inherit'
-             AND post_mime_type IN ('image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/x-ms-bmp', 'image/x-bmp', 'image/bmp', 'image/tiff', 'image/x-tiff')"
-        );
-    }
-
-    /**
-     * Get all PNG attachment IDs (for backward compatibility).
-     */
-    public static function get_all_png_attachment_ids() {
-        return self::get_all_image_attachment_ids();
-    }
-
-    /**
-     * Get overall stats summary.
-     */
-    public static function get_stats_summary() {
-        global $wpdb;
-        $table = $wpdb->prefix . 'png_optimizer_stats';
-        return $wpdb->get_row( "SELECT COUNT(*) as total_files, SUM(saved_bytes) as total_saved, SUM(original_size) as total_original FROM $table" );
-    }
+    // -------------------------------------------------------------------------
+    // Attachment helpers
+    // -------------------------------------------------------------------------
 
     /**
      * Optimize all sizes of an attachment.
@@ -395,13 +441,11 @@ class PNG_Optimizer_Core {
 
         $results = [];
 
-        // Main file
         $result = $this->optimize_file( $file, $attachment_id );
         if ( $result ) {
             $results[] = $result;
         }
 
-        // Thumbnail sizes
         $metadata = wp_get_attachment_metadata( $attachment_id );
         if ( isset( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
             $dir = trailingslashit( dirname( $file ) );
@@ -422,9 +466,44 @@ class PNG_Optimizer_Core {
         return $results;
     }
 
-    /**
-     * Save optimization stats to database.
-     */
+    // -------------------------------------------------------------------------
+    // Static helpers
+    // -------------------------------------------------------------------------
+
+    public static function get_all_image_attachment_ids() {
+        global $wpdb;
+        return $wpdb->get_col(
+            "SELECT ID FROM {$wpdb->posts}
+             WHERE post_type = 'attachment'
+             AND post_status = 'inherit'
+             AND post_mime_type IN ('image/png','image/jpeg','image/webp','image/gif','image/x-ms-bmp','image/x-bmp','image/bmp','image/tiff','image/x-tiff')"
+        );
+    }
+
+    public static function get_all_png_attachment_ids() {
+        return self::get_all_image_attachment_ids();
+    }
+
+    public static function get_stats_summary() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'png_optimizer_stats';
+        return $wpdb->get_row( "SELECT COUNT(*) as total_files, SUM(saved_bytes) as total_saved, SUM(original_size) as total_original FROM $table" );
+    }
+
+    public static function get_available_library() {
+        if ( extension_loaded( 'imagick' ) ) {
+            return 'Imagick';
+        }
+        if ( extension_loaded( 'gd' ) ) {
+            return 'GD';
+        }
+        return 'none';
+    }
+
+    // -------------------------------------------------------------------------
+    // Stats
+    // -------------------------------------------------------------------------
+
     private function record_stat( $attachment_id, $file_path, $original_size, $optimized_size, $saved ) {
         global $wpdb;
         $table = $wpdb->prefix . 'png_optimizer_stats';
@@ -460,18 +539,5 @@ class PNG_Optimizer_Core {
                 [ '%d', '%s', '%d', '%d', '%d', '%s' ]
             );
         }
-    }
-
-    /**
-     * Check available library.
-     */
-    public static function get_available_library() {
-        if ( extension_loaded( 'imagick' ) ) {
-            return 'Imagick';
-        }
-        if ( extension_loaded( 'gd' ) ) {
-            return 'GD';
-        }
-        return 'none';
     }
 }
