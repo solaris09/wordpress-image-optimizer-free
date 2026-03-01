@@ -96,6 +96,13 @@ function png_opt_strings() {
             'invalid_attachment'  => 'Invalid attachment.',
             'optimization_failed' => 'Optimization failed or file is already optimal.',
 
+            // WebP status / notices
+            'webp_creation'       => 'WebP Creation',
+            'webp_available'      => 'Available',
+            'webp_unavailable'    => 'Not Available',
+            'webp_not_supported'  => 'WebP conversion is enabled but your server cannot generate WebP files. Please ask your host to enable GD with WebP support or install Imagick with WEBP format.',
+            'webp_test_ok'        => 'WebP created successfully.',
+
             // JS strings (passed via wp_localize_script)
             'js_optimizing'       => 'Optimizing…',
             'js_done'             => 'Done!',
@@ -163,6 +170,13 @@ function png_opt_strings() {
             'permission_denied'   => 'İzin reddedildi.',
             'invalid_attachment'  => 'Geçersiz dosya.',
             'optimization_failed' => 'Optimizasyon başarısız veya dosya zaten optimal.',
+
+            // WebP status / notices
+            'webp_creation'       => 'WebP Oluşturma',
+            'webp_available'      => 'Kullanılabilir',
+            'webp_unavailable'    => 'Kullanılamaz',
+            'webp_not_supported'  => "WebP dönüştürme aktif fakat sunucunuz WebP dosyası oluşturamıyor. Lütfen hosting sağlayıcınızdan GD'de WebP desteğini veya Imagick'te WEBP formatını etkinleştirmesini isteyin.",
+            'webp_test_ok'        => 'WebP başarıyla oluşturuldu.',
 
             // JS strings
             'js_optimizing'       => 'Optimize ediliyor…',

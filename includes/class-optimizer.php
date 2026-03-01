@@ -72,7 +72,12 @@ class PNG_Optimizer_Core {
                 return false;
         }
 
+        // Even if optimization failed, still try WebP conversion if enabled.
+        // (e.g. server has GD+WebP but Imagick is missing — optimize fails but WebP can work)
         if ( ! $success ) {
+            if ( ! empty( $this->options['convert_webp'] ) && in_array( $ext, [ 'png', 'jpg', 'jpeg' ], true ) ) {
+                $this->create_webp_version( $file_path, $ext );
+            }
             return false;
         }
 
@@ -284,51 +289,97 @@ class PNG_Optimizer_Core {
      * Called when the "Convert to WebP" option is enabled.
      *
      * @param  string $file_path Source image path (PNG or JPEG).
-     * @param  string $ext       File extension without dot (png|jpg|jpeg).
+     * @param  string $ext       Lowercase file extension without dot (png|jpg|jpeg).
      * @return bool
      */
     private function create_webp_version( $file_path, $ext ) {
-        $webp_path = substr( $file_path, 0, -strlen( $ext ) ) . 'webp';
+        if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
+            return false;
+        }
+
+        // Build .webp path by replacing the extension
+        $webp_path = substr( $file_path, 0, strrpos( $file_path, '.' ) + 1 ) . 'webp';
 
         $quality = isset( $this->options['webp_quality'] ) ? (int) $this->options['webp_quality'] : 80;
         $quality = max( 1, min( 100, $quality ) );
 
-        // Try Imagick first
+        // ── Imagick ──────────────────────────────────────────────────────────
         if ( extension_loaded( 'imagick' ) ) {
             try {
-                $imagick = new Imagick( $file_path );
-                $imagick->setImageFormat( 'WEBP' );
-                $imagick->stripImage();
-                $imagick->setImageCompressionQuality( $quality );
-                $written = $imagick->writeImage( $webp_path );
-                $imagick->destroy();
-                if ( $written ) {
-                    return true;
+                $formats = Imagick::queryFormats( 'WEBP' );
+                if ( ! empty( $formats ) ) {
+                    $imagick = new Imagick( $file_path );
+                    $imagick->setImageFormat( 'WEBP' );
+                    $imagick->stripImage();
+                    $imagick->setImageCompressionQuality( $quality );
+                    $imagick->writeImage( $webp_path );
+                    $imagick->destroy();
+                    if ( file_exists( $webp_path ) && filesize( $webp_path ) > 0 ) {
+                        return true;
+                    }
                 }
             } catch ( Exception $e ) {
                 // fall through to GD
             }
         }
 
-        // GD fallback
-        if ( extension_loaded( 'gd' ) && function_exists( 'imagewebp' ) ) {
-            $image = null;
+        // ── GD ───────────────────────────────────────────────────────────────
+        if ( ! extension_loaded( 'gd' ) || ! function_exists( 'imagewebp' ) ) {
+            return false;
+        }
 
-            if ( $ext === 'png' ) {
-                $image = @imagecreatefrompng( $file_path );
-                if ( $image ) {
-                    imagealphablending( $image, false );
-                    imagesavealpha( $image, true );
-                }
-            } elseif ( in_array( $ext, [ 'jpg', 'jpeg' ], true ) ) {
-                $image = @imagecreatefromjpeg( $file_path );
-            }
+        $image = null;
 
+        // Try type-specific loader first
+        if ( $ext === 'png' ) {
+            $image = @imagecreatefrompng( $file_path );
             if ( $image ) {
-                $result = imagewebp( $image, $webp_path, $quality );
-                imagedestroy( $image );
-                return (bool) $result;
+                imagealphablending( $image, false );
+                imagesavealpha( $image, true );
             }
+        } elseif ( in_array( $ext, [ 'jpg', 'jpeg' ], true ) ) {
+            $image = @imagecreatefromjpeg( $file_path );
+        }
+
+        // Generic fallback via imagecreatefromstring (works for any format GD can decode)
+        if ( ! $image ) {
+            $data = @file_get_contents( $file_path );
+            if ( $data ) {
+                $image = @imagecreatefromstring( $data );
+            }
+        }
+
+        if ( ! $image ) {
+            return false;
+        }
+
+        $result = @imagewebp( $image, $webp_path, $quality );
+        imagedestroy( $image );
+
+        // Verify the file was actually written (imagewebp can return true but write 0 bytes)
+        return $result && file_exists( $webp_path ) && filesize( $webp_path ) > 0;
+    }
+
+    /**
+     * Check whether the server can generate WebP files.
+     * Used by the admin UI to show warnings when WebP conversion is enabled.
+     *
+     * @return bool
+     */
+    public static function can_create_webp() {
+        // Imagick with WEBP format support
+        if ( extension_loaded( 'imagick' ) ) {
+            try {
+                $formats = Imagick::queryFormats( 'WEBP' );
+                if ( ! empty( $formats ) ) {
+                    return true;
+                }
+            } catch ( Exception $e ) {}
+        }
+
+        // GD with imagewebp() support
+        if ( extension_loaded( 'gd' ) && function_exists( 'imagewebp' ) ) {
+            return true;
         }
 
         return false;

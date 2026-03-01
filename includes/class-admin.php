@@ -97,14 +97,28 @@ class PNG_Optimizer_Admin {
             return;
         }
 
-        $options = get_option( 'png_optimizer_options', [] );
-        $lang    = isset( $options['language'] ) ? $options['language'] : 'en';
-        $stats   = PNG_Optimizer_Core::get_stats_summary();
-        $lib     = PNG_Optimizer_Core::get_available_library();
-        $total   = PNG_Optimizer_Core::get_all_png_attachment_ids();
+        $options       = get_option( 'png_optimizer_options', [] );
+        $lang          = isset( $options['language'] ) ? $options['language'] : 'en';
+        $stats         = PNG_Optimizer_Core::get_stats_summary();
+        $lib           = PNG_Optimizer_Core::get_available_library();
+        $total         = PNG_Optimizer_Core::get_all_png_attachment_ids();
+        $can_webp      = PNG_Optimizer_Core::can_create_webp();
+        $webp_enabled  = ! empty( $options['convert_webp'] );
         ?>
         <div class="wrap png-opt-wrap">
             <h1><span class="dashicons dashicons-images-alt2"></span> <?php echo esc_html( png_opt_t( 'plugin_name', $lang ) ); ?></h1>
+
+            <?php if ( $webp_enabled && ! $can_webp ) : ?>
+            <div class="notice notice-error" style="margin:10px 0">
+                <p><strong>⚠ <?php echo esc_html( png_opt_t( 'webp_not_supported', $lang ) ); ?></strong></p>
+            </div>
+            <?php endif; ?>
+
+            <?php if ( $lib === 'none' ) : ?>
+            <div class="notice notice-error" style="margin:10px 0">
+                <p><strong>⚠ <?php echo esc_html( png_opt_t( 'none_install', $lang ) ); ?></strong></p>
+            </div>
+            <?php endif; ?>
 
             <!-- Stats bar -->
             <div class="png-opt-stats-bar">
@@ -274,15 +288,38 @@ class PNG_Optimizer_Admin {
                                 </tr>
                                 <tr>
                                     <td><?php echo esc_html( png_opt_t( 'imagick_lbl', $lang ) ); ?></td>
-                                    <td><?php echo extension_loaded( 'imagick' ) ? '<span class="png-opt-badge png-opt-badge-ok">✓ Loaded</span>' : '<span class="png-opt-badge png-opt-badge-warn">✗ Not loaded</span>'; ?></td>
+                                    <td>
+                                        <?php if ( extension_loaded( 'imagick' ) ) :
+                                            $webp_fmt = [];
+                                            try { $webp_fmt = Imagick::queryFormats('WEBP'); } catch(Exception $e){}
+                                        ?>
+                                            <span class="png-opt-badge png-opt-badge-ok">✓ Loaded</span>
+                                            <?php echo empty($webp_fmt) ? ' <span class="png-opt-badge png-opt-badge-warn">✗ No WEBP format</span>' : ' <span class="png-opt-badge png-opt-badge-ok">✓ WEBP</span>'; ?>
+                                        <?php else : ?>
+                                            <span class="png-opt-badge png-opt-badge-warn">✗ Not loaded</span>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td><?php echo esc_html( png_opt_t( 'gd_lbl', $lang ) ); ?></td>
-                                    <td><?php echo extension_loaded( 'gd' ) ? '<span class="png-opt-badge png-opt-badge-ok">✓ Loaded</span>' : '<span class="png-opt-badge png-opt-badge-warn">✗ Not loaded</span>'; ?></td>
+                                    <td>
+                                        <?php if ( extension_loaded( 'gd' ) ) : ?>
+                                            <span class="png-opt-badge png-opt-badge-ok">✓ Loaded</span>
+                                            <?php echo function_exists('imagewebp') ? ' <span class="png-opt-badge png-opt-badge-ok">✓ WebP</span>' : ' <span class="png-opt-badge png-opt-badge-warn">✗ No WebP</span>'; ?>
+                                        <?php else : ?>
+                                            <span class="png-opt-badge png-opt-badge-warn">✗ Not loaded</span>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td><?php echo esc_html( png_opt_t( 'webp_support_gd', $lang ) ); ?></td>
-                                    <td><?php echo function_exists( 'imagewebp' ) ? '<span class="png-opt-badge png-opt-badge-ok">✓ Yes</span>' : '<span class="png-opt-badge png-opt-badge-warn">✗ No</span>'; ?></td>
+                                    <td><strong><?php echo esc_html( png_opt_t( 'webp_creation', $lang ) ); ?></strong></td>
+                                    <td>
+                                        <?php if ( $can_webp ) : ?>
+                                            <span class="png-opt-badge png-opt-badge-ok">✓ <?php echo esc_html( png_opt_t( 'webp_available', $lang ) ); ?></span>
+                                        <?php else : ?>
+                                            <span class="png-opt-badge png-opt-badge-error">✗ <?php echo esc_html( png_opt_t( 'webp_unavailable', $lang ) ); ?></span>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td><?php echo esc_html( png_opt_t( 'php_version', $lang ) ); ?></td>
