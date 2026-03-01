@@ -349,15 +349,31 @@ class PNG_Optimizer_Core {
             }
         }
 
-        if ( ! $image ) {
-            return false;
+        if ( $image ) {
+            $result = @imagewebp( $image, $webp_path, $quality );
+            imagedestroy( $image );
+
+            // Verify the file was actually written (imagewebp can return true but write 0 bytes)
+            if ( $result && file_exists( $webp_path ) && filesize( $webp_path ) > 0 ) {
+                return true;
+            }
         }
 
-        $result = @imagewebp( $image, $webp_path, $quality );
-        imagedestroy( $image );
+        // ── cwebp CLI fallback ────────────────────────────────────────────────
+        // Works even when GD/Imagick have no WebP support, as long as cwebp is installed.
+        if ( function_exists( 'exec' ) ) {
+            $cmd = 'cwebp -q ' . (int) $quality
+                 . ' ' . escapeshellarg( $file_path )
+                 . ' -o ' . escapeshellarg( $webp_path )
+                 . ' 2>/dev/null';
+            $return_code = -1;
+            @exec( $cmd, $out, $return_code );
+            if ( $return_code === 0 && file_exists( $webp_path ) && filesize( $webp_path ) > 0 ) {
+                return true;
+            }
+        }
 
-        // Verify the file was actually written (imagewebp can return true but write 0 bytes)
-        return $result && file_exists( $webp_path ) && filesize( $webp_path ) > 0;
+        return false;
     }
 
     /**

@@ -383,9 +383,9 @@ class PNG_Optimizer_Admin {
 
         // ── WebP convert button (PNG / JPEG only) ────────────────────────────
         $webp_mimes = [ 'image/png', 'image/jpeg' ];
-        if ( in_array( $mime, $webp_mimes, true ) && PNG_Optimizer_Core::can_create_webp() ) {
-            $file_path  = get_attached_file( $post_id );
-            $webp_path  = $file_path ? ( substr( $file_path, 0, strrpos( $file_path, '.' ) + 1 ) . 'webp' ) : '';
+        if ( in_array( $mime, $webp_mimes, true ) ) {
+            $file_path   = get_attached_file( $post_id );
+            $webp_path   = $file_path ? ( substr( $file_path, 0, strrpos( $file_path, '.' ) + 1 ) . 'webp' ) : '';
             $webp_exists = $webp_path && file_exists( $webp_path );
 
             echo '<div style="margin-top:4px">';
@@ -424,11 +424,11 @@ class PNG_Optimizer_Admin {
         echo '<span id="png-opt-single-result-' . esc_attr( $post->ID ) . '" style="margin-left:8px"></span>';
         echo '</div>';
 
-        // ── Convert to WebP button (PNG / JPEG only, server must support WebP) ──
+        // ── Convert to WebP button (PNG / JPEG only) ────────────────────────
         $webp_mimes = [ 'image/png', 'image/jpeg' ];
-        if ( in_array( $mime, $webp_mimes, true ) && PNG_Optimizer_Core::can_create_webp() ) {
-            $file_path  = get_attached_file( $post->ID );
-            $webp_path  = $file_path ? ( substr( $file_path, 0, strrpos( $file_path, '.' ) + 1 ) . 'webp' ) : '';
+        if ( in_array( $mime, $webp_mimes, true ) ) {
+            $file_path   = get_attached_file( $post->ID );
+            $webp_path   = $file_path ? ( substr( $file_path, 0, strrpos( $file_path, '.' ) + 1 ) . 'webp' ) : '';
             $webp_exists = $webp_path && file_exists( $webp_path );
 
             echo '<div class="misc-pub-section" style="padding-top:6px">';
@@ -499,7 +499,30 @@ class PNG_Optimizer_Admin {
         $result    = $optimizer->convert_attachment_to_webp( $id );
 
         if ( ! $result ) {
-            wp_send_json_error( [ 'message' => png_opt_t( 'webp_convert_failed' ) ] );
+            // Build diagnostic message so the user knows exactly what's missing.
+            $diag = [];
+            if ( ! extension_loaded( 'imagick' ) ) {
+                $diag[] = 'Imagick yüklü değil';
+            } else {
+                $fmt = [];
+                try { $fmt = Imagick::queryFormats( 'WEBP' ); } catch ( Exception $e ) {}
+                if ( empty( $fmt ) ) {
+                    $diag[] = 'Imagick WEBP formatı devre dışı';
+                }
+            }
+            if ( ! extension_loaded( 'gd' ) ) {
+                $diag[] = 'GD yüklü değil';
+            } elseif ( ! function_exists( 'imagewebp' ) ) {
+                $diag[] = 'GD imagewebp() yok';
+            }
+            if ( ! function_exists( 'exec' ) ) {
+                $diag[] = 'exec() devre dışı (cwebp denenilemedi)';
+            }
+            $msg = png_opt_t( 'webp_convert_failed' );
+            if ( ! empty( $diag ) ) {
+                $msg .= ' — ' . implode( ', ', $diag ) . '. Hostingden GD WebP veya Imagick WEBP kurmalarını isteyin.';
+            }
+            wp_send_json_error( [ 'message' => $msg ] );
         }
 
         wp_send_json_success( [ 'message' => png_opt_t( 'webp_done' ) ] );
