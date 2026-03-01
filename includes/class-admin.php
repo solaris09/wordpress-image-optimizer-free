@@ -17,6 +17,7 @@ class PNG_Optimizer_Admin {
         // Optimize button in attachment edit screen
         add_action( 'attachment_submitbox_misc_actions',  [ $this, 'add_optimize_button' ] );
         add_action( 'wp_ajax_png_opt_optimize_single',    [ $this, 'ajax_optimize_single' ] );
+        add_action( 'wp_ajax_png_opt_webp_single',        [ $this, 'ajax_webp_single' ] );
 
         // Dashboard widget
         add_action( 'wp_dashboard_setup', [ $this, 'register_dashboard_widget' ] );
@@ -81,9 +82,12 @@ class PNG_Optimizer_Admin {
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'png_opt_nonce' ),
             'i18n'     => [
-                'optimizing' => png_opt_t( 'js_optimizing' ),
-                'done'       => png_opt_t( 'js_done' ),
-                'error'      => png_opt_t( 'js_error' ),
+                'optimizing'       => png_opt_t( 'js_optimizing' ),
+                'done'             => png_opt_t( 'js_done' ),
+                'error'            => png_opt_t( 'js_error' ),
+                'convert_webp_btn' => png_opt_t( 'convert_webp_btn' ),
+                'converting_webp'  => png_opt_t( 'converting_webp' ),
+                'webp_done'        => png_opt_t( 'webp_done' ),
             ],
         ] );
     }
@@ -391,12 +395,33 @@ class PNG_Optimizer_Admin {
         if ( ! in_array( $mime, $supported, true ) ) {
             return;
         }
+
+        // ── Optimize button ──────────────────────────────────────────────────
         echo '<div class="misc-pub-section">';
         echo '<button type="button" class="button png-opt-single-btn" data-id="' . esc_attr( $post->ID ) . '">'
             . esc_html( png_opt_t( 'optimize_img_btn' ) )
             . '</button>';
         echo '<span id="png-opt-single-result-' . esc_attr( $post->ID ) . '" style="margin-left:8px"></span>';
         echo '</div>';
+
+        // ── Convert to WebP button (PNG / JPEG only, server must support WebP) ──
+        $webp_mimes = [ 'image/png', 'image/jpeg' ];
+        if ( in_array( $mime, $webp_mimes, true ) && PNG_Optimizer_Core::can_create_webp() ) {
+            $file_path  = get_attached_file( $post->ID );
+            $webp_path  = $file_path ? ( substr( $file_path, 0, strrpos( $file_path, '.' ) + 1 ) . 'webp' ) : '';
+            $webp_exists = $webp_path && file_exists( $webp_path );
+
+            echo '<div class="misc-pub-section" style="padding-top:6px">';
+            if ( $webp_exists ) {
+                echo '<span style="color:#2eb136">' . esc_html( png_opt_t( 'webp_done' ) ) . '</span>';
+            } else {
+                echo '<button type="button" class="button png-opt-webp-btn" data-id="' . esc_attr( $post->ID ) . '">'
+                    . esc_html( png_opt_t( 'convert_webp_btn' ) )
+                    . '</button>';
+            }
+            echo '<span id="png-opt-webp-result-' . esc_attr( $post->ID ) . '" style="margin-left:8px"></span>';
+            echo '</div>';
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -432,6 +457,32 @@ class PNG_Optimizer_Admin {
             'human'         => $this->format_bytes( $total_saved ),
             'files'         => count( $results ),
         ] );
+    }
+
+    // -------------------------------------------------------------------------
+    // AJAX: convert single image to WebP
+    // -------------------------------------------------------------------------
+
+    public function ajax_webp_single() {
+        check_ajax_referer( 'png_opt_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'upload_files' ) ) {
+            wp_send_json_error( [ 'message' => png_opt_t( 'permission_denied' ) ] );
+        }
+
+        $id = isset( $_POST['attachment_id'] ) ? (int) $_POST['attachment_id'] : 0;
+        if ( ! $id ) {
+            wp_send_json_error( [ 'message' => png_opt_t( 'invalid_attachment' ) ] );
+        }
+
+        $optimizer = new PNG_Optimizer_Core();
+        $result    = $optimizer->convert_attachment_to_webp( $id );
+
+        if ( ! $result ) {
+            wp_send_json_error( [ 'message' => png_opt_t( 'webp_convert_failed' ) ] );
+        }
+
+        wp_send_json_success( [ 'message' => png_opt_t( 'webp_done' ) ] );
     }
 
     // -------------------------------------------------------------------------

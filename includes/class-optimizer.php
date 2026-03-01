@@ -385,6 +385,25 @@ class PNG_Optimizer_Core {
         return false;
     }
 
+    /**
+     * Convert a single attachment's main file to WebP (public wrapper).
+     * Called from the admin AJAX "Convert to WebP" button.
+     *
+     * @param  int $attachment_id
+     * @return bool  true if the .webp file was written, false otherwise.
+     */
+    public function convert_attachment_to_webp( $attachment_id ) {
+        $file = get_attached_file( $attachment_id );
+        if ( ! $file || ! file_exists( $file ) ) {
+            return false;
+        }
+        $ext = strtolower( pathinfo( $file, PATHINFO_EXTENSION ) );
+        if ( ! in_array( $ext, [ 'png', 'jpg', 'jpeg' ], true ) ) {
+            return false;
+        }
+        return $this->create_webp_version( $file, $ext );
+    }
+
     // -------------------------------------------------------------------------
     // GIF
     // -------------------------------------------------------------------------

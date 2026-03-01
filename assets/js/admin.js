@@ -31,6 +31,34 @@
         });
     });
 
+    // ── Convert to WebP button (attachment edit screen) ──────────
+    $(document).on('click', '.png-opt-webp-btn', function () {
+        var $btn    = $(this);
+        var id      = $btn.data('id');
+        var $result = $('#png-opt-webp-result-' + id);
+
+        $btn.prop('disabled', true).text(pngOpt.i18n.converting_webp);
+        $result.text('');
+
+        $.post(pngOpt.ajax_url, {
+            action:        'png_opt_webp_single',
+            nonce:         pngOpt.nonce,
+            attachment_id: id
+        })
+        .done(function (res) {
+            if (res.success) {
+                $btn.replaceWith('<span style="color:#2eb136;font-weight:600">' + pngOpt.i18n.webp_done + '</span>');
+            } else {
+                $btn.prop('disabled', false).text(pngOpt.i18n.convert_webp_btn);
+                $result.css('color', '#cc1818').text(res.data.message || pngOpt.i18n.error);
+            }
+        })
+        .fail(function () {
+            $btn.prop('disabled', false).text(pngOpt.i18n.convert_webp_btn);
+            $result.css('color', '#cc1818').text(pngOpt.i18n.error);
+        });
+    });
+
     // ── WebP quality row toggle ───────────────────────────────────
     $('#png-opt-webp-toggle').on('change', function () {
         if ($(this).is(':checked')) {
