@@ -370,6 +370,7 @@ class PNG_Optimizer_Admin {
             $post_id
         ) );
 
+        // ── Optimize status / button ─────────────────────────────────────────
         if ( $row && $row->saved > 0 ) {
             $pct = $row->orig > 0 ? round( ( $row->saved / $row->orig ) * 100, 1 ) : 0;
             echo '<span style="color:#2eb136;font-weight:600">-' . esc_html( $pct ) . '%</span>';
@@ -378,6 +379,25 @@ class PNG_Optimizer_Admin {
             echo '<button class="button button-small png-opt-single-btn" data-id="' . esc_attr( $post_id ) . '">'
                 . esc_html( png_opt_t( 'optimize_btn' ) )
                 . '</button>';
+        }
+
+        // ── WebP convert button (PNG / JPEG only) ────────────────────────────
+        $webp_mimes = [ 'image/png', 'image/jpeg' ];
+        if ( in_array( $mime, $webp_mimes, true ) && PNG_Optimizer_Core::can_create_webp() ) {
+            $file_path  = get_attached_file( $post_id );
+            $webp_path  = $file_path ? ( substr( $file_path, 0, strrpos( $file_path, '.' ) + 1 ) . 'webp' ) : '';
+            $webp_exists = $webp_path && file_exists( $webp_path );
+
+            echo '<div style="margin-top:4px">';
+            if ( $webp_exists ) {
+                echo '<span style="color:#2eb136;font-size:11px">' . esc_html( png_opt_t( 'webp_done' ) ) . '</span>';
+            } else {
+                echo '<button class="button button-small png-opt-webp-btn" data-id="' . esc_attr( $post_id ) . '">'
+                    . esc_html( png_opt_t( 'convert_webp_btn' ) )
+                    . '</button>';
+            }
+            echo '<span id="png-opt-webp-result-' . esc_attr( $post_id ) . '" style="display:block;font-size:11px"></span>';
+            echo '</div>';
         }
     }
 
